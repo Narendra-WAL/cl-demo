@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { TextInput } from 'react-desktop/macOs';
 import { Button } from 'react-desktop/macOs';
 import github from 'octonode';
+import { ipcRenderer } from 'electron';
 
 export default class GithubScreen extends Component {
   handleChange = e => console.log(e.target.value);
@@ -24,10 +25,12 @@ export default class GithubScreen extends Component {
     var ghrepo = client.repo('octokit/octokit.rb');
     ghrepo.prs({}, function (err, body, headers) {
       console.log(body); //json object
+      ipcRenderer.send('received:prs', body);
     })
 
     ghrepo.contributors(function (err, body, headers) {
       console.log("Contributors: " + body); //json object
+      ipcRenderer.send('received:contributors', body);
     })
   }
 

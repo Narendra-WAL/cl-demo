@@ -10,10 +10,13 @@
  *
  * @flow
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
+const models = require('../models');
+const Sequelize = require('sequelize');
 
 let mainWindow = null;
+let sequelize = null;
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -88,4 +91,36 @@ app.on('ready', async () => {
 
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
+
+  sequelize = new Sequelize('', '', '', {
+    dialect: 'sqlite',
+    operatorsAliases: false,
+
+    // SQLite only
+    storage: './database.sqlite'
+  });
+
+  sequelize
+  .authenticate()
+  .then(() => {
+    console.log('Connection has been established successfully.');
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
+  });
+
+});
+
+// PRs received
+ipcMain.on('received:prs', function(e, item){
+  console.log('PRs info received.');
+  PR.create({
+    url: item.get(0).url,
+    body: item.get(0).body,
+    state: item.get(0).state
+  }).then(() => {
+    models.PR.findOne().then(pr => {
+      console.log(pr.get('firstName'));
+    });
+  })
 });
