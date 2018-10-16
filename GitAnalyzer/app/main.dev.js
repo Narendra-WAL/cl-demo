@@ -12,7 +12,7 @@
  */
 import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
-const models = require('../models');
+//const models = require('../models');
 const Sequelize = require('sequelize');
 
 let mainWindow = null;
@@ -112,7 +112,7 @@ app.on('ready', async () => {
 });
 
 // PRs received
-ipcMain.on('received:prs', function(e, item){
+/*ipcMain.on('received:prs', function(e, item){
   console.log('PRs info received.');
   PR.create({
     url: item.get(0).url,
@@ -123,4 +123,4 @@ ipcMain.on('received:prs', function(e, item){
       console.log(pr.get('firstName'));
     });
   })
-});
+});*/

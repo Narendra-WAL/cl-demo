@@ -1,10 +1,28 @@
 import React, { Component } from 'react';
-import { TextInput } from 'react-desktop/macOs';
-import { Button } from 'react-desktop/macOs';
 import github from 'octonode';
 import { ipcRenderer } from 'electron';
+import MainContent from './mainContent/mainContent';
+import { TabContent, TabPane, Nav, NavItem, NavLink} from 'reactstrap';
+import classnames from 'classnames';
 
 export default class GithubScreen extends Component {
+  constructor (props){
+    super(props)
+    this.state = {
+      activeTab: '1',
+      mainContent: []
+    }
+    this.toggle = this.toggle.bind(this);
+  }
+
+  toggle(tab) {
+    if (this.state.activeTab !== tab) {
+      this.setState({
+        activeTab: tab
+      });
+    }
+  }
+
   handleChange = e => console.log(e.target.value);
 
   validateUrl = (e) => {
@@ -23,13 +41,22 @@ export default class GithubScreen extends Component {
     });
 
     var ghrepo = client.repo('octokit/octokit.rb');
-    ghrepo.prs({}, function (err, body, headers) {
+    ghrepo.prs({}, (err, body, headers) => {
+      //map func
+      let gitAnalyser = body.map((gitContent) => {
+        // console.log(gitContent.url);
+        return (gitContent)
+      })
+      //arr to setstate
+      this.setState({
+        mainContent: gitAnalyser
+      })
       console.log(body); //json object
       ipcRenderer.send('received:prs', body);
     })
 
-    ghrepo.contributors(function (err, body, headers) {
-      console.log("Contributors: " + body); //json object
+    ghrepo.contributors((err, body, headers) => {
+      console.log("Contributors: " + JSON.stringify(body)); //json object
       ipcRenderer.send('received:contributors', body);
     })
   }
@@ -39,17 +66,55 @@ export default class GithubScreen extends Component {
   }
 
   render() {
+    console.log(this.state.mainContent);
+    let contentArr = this.state.mainContent.map((content,index) => {
+      console.log("content",content);
+        return (
+          <MainContent  key={index} 
+                        url={content.url}/> 
+        )
+    });
+    
     return (
-      <div>
-        <TextInput
-          id="githubUrl"
-          placeholder="Github URL"
-          defaultValue=""
-          onChange={this.handleChange}
-          />
-        <Button color="blue" onClick={this.validateUrl}>
-          Analyze
-        </Button>
+      <div className="analyzer-wrapper">
+        <div className="analyzer-input">
+          <input id="githubUrl" placeholder="Github URL" onChange={this.handleChange} />
+          <button color="blue" onClick={this.validateUrl}>Analyze</button>
+        </div>
+        {this.state.mainContent.length > 0 ? 
+          <div className="main-wrapper">
+            <Nav tabs>
+              <NavItem>
+                <NavLink
+                  className={classnames({ active: this.state.activeTab === '1' })}
+                  onClick={() => { this.toggle('1'); }}
+                >
+                  Pull Requests
+                </NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink
+                  className={classnames({ active: this.state.activeTab === '2' })}
+                  onClick={() => { this.toggle('2'); }}
+                >
+                  Contributors
+                </NavLink>
+              </NavItem>
+            </Nav>
+            <TabContent activeTab={this.state.activeTab}>
+              <TabPane tabId="1">
+                {contentArr}
+              </TabPane>
+              <TabPane tabId="2">
+                Nothings out here for now
+              </TabPane>
+            </TabContent>
+          </div>
+          : 
+          <React.Fragment>
+            <p>Please Type something in search PR's and Contributors</p>
+          </React.Fragment>
+        }
       </div>
     );
   }
